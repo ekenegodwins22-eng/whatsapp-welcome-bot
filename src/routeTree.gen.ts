@@ -10,33 +10,76 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicBotStatusRouteImport } from './routes/api/public/bot/status'
+import { Route as ApiPublicBotSessionRouteImport } from './routes/api/public/bot/session'
+import { Route as ApiPublicBotIncomingRouteImport } from './routes/api/public/bot/incoming'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBotStatusRoute = ApiPublicBotStatusRouteImport.update({
+  id: '/api/public/bot/status',
+  path: '/api/public/bot/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotSessionRoute = ApiPublicBotSessionRouteImport.update({
+  id: '/api/public/bot/session',
+  path: '/api/public/bot/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotIncomingRoute = ApiPublicBotIncomingRouteImport.update({
+  id: '/api/public/bot/incoming',
+  path: '/api/public/bot/incoming',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
+  '/api/public/bot/session': typeof ApiPublicBotSessionRoute
+  '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
+  '/api/public/bot/session': typeof ApiPublicBotSessionRoute
+  '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
+  '/api/public/bot/session': typeof ApiPublicBotSessionRoute
+  '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/api/public/bot/incoming'
+    | '/api/public/bot/session'
+    | '/api/public/bot/status'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/api/public/bot/incoming'
+    | '/api/public/bot/session'
+    | '/api/public/bot/status'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/public/bot/incoming'
+    | '/api/public/bot/session'
+    | '/api/public/bot/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicBotIncomingRoute: typeof ApiPublicBotIncomingRoute
+  ApiPublicBotSessionRoute: typeof ApiPublicBotSessionRoute
+  ApiPublicBotStatusRoute: typeof ApiPublicBotStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,12 +91,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bot/status': {
+      id: '/api/public/bot/status'
+      path: '/api/public/bot/status'
+      fullPath: '/api/public/bot/status'
+      preLoaderRoute: typeof ApiPublicBotStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/session': {
+      id: '/api/public/bot/session'
+      path: '/api/public/bot/session'
+      fullPath: '/api/public/bot/session'
+      preLoaderRoute: typeof ApiPublicBotSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/incoming': {
+      id: '/api/public/bot/incoming'
+      path: '/api/public/bot/incoming'
+      fullPath: '/api/public/bot/incoming'
+      preLoaderRoute: typeof ApiPublicBotIncomingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicBotIncomingRoute: ApiPublicBotIncomingRoute,
+  ApiPublicBotSessionRoute: ApiPublicBotSessionRoute,
+  ApiPublicBotStatusRoute: ApiPublicBotStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
