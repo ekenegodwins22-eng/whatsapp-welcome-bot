@@ -76,10 +76,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "AwayBot — WhatsApp AI assistant for when you're away" },
       { name: "description", content: "AI-powered WhatsApp auto-reply: welcome new contacts and answer outside business hours." },
       { name: "author", content: "AwayBot" },
-      { property: "og:title", content: "AwayBot — WhatsApp AI assistant" },
-      { property: "og:description", content: "Welcome contacts and reply with AI when you're away." },
+      { property: "og:title", content: "AwayBot — WhatsApp AI assistant for when you're away" },
+      { property: "og:description", content: "AI-powered WhatsApp auto-reply: welcome new contacts and answer outside business hours." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "AwayBot — WhatsApp AI assistant for when you're away" },
+      { name: "twitter:description", content: "AI-powered WhatsApp auto-reply: welcome new contacts and answer outside business hours." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/381bdf5b-6ac6-4864-8b05-939d3df3fa88/id-preview-f873cb12--7199a11b-ad63-44d7-bc3a-3902774b3fb2.lovable.app-1778691533040.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/381bdf5b-6ac6-4864-8b05-939d3df3fa88/id-preview-f873cb12--7199a11b-ad63-44d7-bc3a-3902774b3fb2.lovable.app-1778691533040.png" },
     ],
     links: [
       {
