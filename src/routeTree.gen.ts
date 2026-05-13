@@ -9,38 +9,167 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardMessagesRouteImport } from './routes/dashboard.messages'
+import { Route as DashboardContactsRouteImport } from './routes/dashboard.contacts'
+import { Route as ApiPublicBotStatusRouteImport } from './routes/api/public/bot/status'
+import { Route as ApiPublicBotSessionRouteImport } from './routes/api/public/bot/session'
+import { Route as ApiPublicBotIncomingRouteImport } from './routes/api/public/bot/incoming'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMessagesRoute = DashboardMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardContactsRoute = DashboardContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const ApiPublicBotStatusRoute = ApiPublicBotStatusRouteImport.update({
+  id: '/api/public/bot/status',
+  path: '/api/public/bot/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotSessionRoute = ApiPublicBotSessionRouteImport.update({
+  id: '/api/public/bot/session',
+  path: '/api/public/bot/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotIncomingRoute = ApiPublicBotIncomingRouteImport.update({
+  id: '/api/public/bot/incoming',
+  path: '/api/public/bot/incoming',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/login': typeof LoginRoute
+  '/dashboard/contacts': typeof DashboardContactsRoute
+  '/dashboard/messages': typeof DashboardMessagesRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
+  '/api/public/bot/session': typeof ApiPublicBotSessionRoute
+  '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/dashboard/contacts': typeof DashboardContactsRoute
+  '/dashboard/messages': typeof DashboardMessagesRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
+  '/api/public/bot/session': typeof ApiPublicBotSessionRoute
+  '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/login': typeof LoginRoute
+  '/dashboard/contacts': typeof DashboardContactsRoute
+  '/dashboard/messages': typeof DashboardMessagesRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
+  '/api/public/bot/session': typeof ApiPublicBotSessionRoute
+  '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/dashboard/contacts'
+    | '/dashboard/messages'
+    | '/dashboard/settings'
+    | '/dashboard/'
+    | '/api/public/bot/incoming'
+    | '/api/public/bot/session'
+    | '/api/public/bot/status'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/dashboard/contacts'
+    | '/dashboard/messages'
+    | '/dashboard/settings'
+    | '/dashboard'
+    | '/api/public/bot/incoming'
+    | '/api/public/bot/session'
+    | '/api/public/bot/status'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/dashboard/contacts'
+    | '/dashboard/messages'
+    | '/dashboard/settings'
+    | '/dashboard/'
+    | '/api/public/bot/incoming'
+    | '/api/public/bot/session'
+    | '/api/public/bot/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  ApiPublicBotIncomingRoute: typeof ApiPublicBotIncomingRoute
+  ApiPublicBotSessionRoute: typeof ApiPublicBotSessionRoute
+  ApiPublicBotStatusRoute: typeof ApiPublicBotStatusRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +177,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/messages': {
+      id: '/dashboard/messages'
+      path: '/messages'
+      fullPath: '/dashboard/messages'
+      preLoaderRoute: typeof DashboardMessagesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/contacts': {
+      id: '/dashboard/contacts'
+      path: '/contacts'
+      fullPath: '/dashboard/contacts'
+      preLoaderRoute: typeof DashboardContactsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/api/public/bot/status': {
+      id: '/api/public/bot/status'
+      path: '/api/public/bot/status'
+      fullPath: '/api/public/bot/status'
+      preLoaderRoute: typeof ApiPublicBotStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/session': {
+      id: '/api/public/bot/session'
+      path: '/api/public/bot/session'
+      fullPath: '/api/public/bot/session'
+      preLoaderRoute: typeof ApiPublicBotSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/incoming': {
+      id: '/api/public/bot/incoming'
+      path: '/api/public/bot/incoming'
+      fullPath: '/api/public/bot/incoming'
+      preLoaderRoute: typeof ApiPublicBotIncomingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardContactsRoute: typeof DashboardContactsRoute
+  DashboardMessagesRoute: typeof DashboardMessagesRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardContactsRoute: DashboardContactsRoute,
+  DashboardMessagesRoute: DashboardMessagesRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRouteWithChildren,
+  LoginRoute: LoginRoute,
+  ApiPublicBotIncomingRoute: ApiPublicBotIncomingRoute,
+  ApiPublicBotSessionRoute: ApiPublicBotSessionRoute,
+  ApiPublicBotStatusRoute: ApiPublicBotStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
