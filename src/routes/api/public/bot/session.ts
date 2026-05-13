@@ -46,7 +46,7 @@ export const Route = createFileRoute("/api/public/bot/session")({
         const { error } = await supabaseAdmin.from("bot_session").upsert(
           {
             user_id: body.user_id,
-            auth_state: body.auth_state ?? null,
+            auth_state: (body.auth_state ?? null) as never,
             phone_number: body.phone_number ?? null,
             updated_at: new Date().toISOString(),
           },
