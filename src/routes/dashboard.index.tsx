@@ -6,7 +6,39 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+
+const DASHBOARD_URL = "https://ai-responder-pro.lovable.app";
+const RAILWAY_URL = "https://whatsapp-welcome-bot-production.up.railway.app/";
+
+function CopyField({ label, value, mask }: { label: string; value: string; mask?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const display = mask ? "•".repeat(Math.min(value.length, 24)) : value;
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <div className="flex gap-2">
+        <Input readOnly value={display} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={async () => {
+            await navigator.clipboard.writeText(value);
+            setCopied(true);
+            toast.success(`${label} copied`);
+            setTimeout(() => setCopied(false), 1500);
+          }}
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/dashboard/")({
   component: StatusPage,
@@ -156,6 +188,22 @@ function StatusPage() {
               updateConfig({ away_mode: v });
             }}
           />
+        </div>
+      </Card>
+
+      <Card className="space-y-4 p-6">
+        <div>
+          <h2 className="font-semibold">Bot deployment</h2>
+          <p className="text-xs text-muted-foreground">
+            Copy these into your Railway service's environment variables.
+          </p>
+        </div>
+        <CopyField label="USER_ID" value={user?.id ?? ""} />
+        <CopyField label="DASHBOARD_URL" value={DASHBOARD_URL} />
+        <CopyField label="BOT_SHARED_SECRET" value="(set the same value you configured in Lovable secrets)" />
+        <CopyField label="PHONE_NUMBER" value="(your WhatsApp number in international format, e.g. 2348012345678)" />
+        <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+          Railway service: <a href={RAILWAY_URL} target="_blank" rel="noreferrer" className="underline">{RAILWAY_URL}</a>
         </div>
       </Card>
     </div>
