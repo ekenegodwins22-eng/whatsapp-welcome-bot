@@ -190,6 +190,22 @@ function StatusPage() {
           />
         </div>
       </Card>
+
+      <Card className="space-y-4 p-6">
+        <div>
+          <h2 className="font-semibold">Bot deployment</h2>
+          <p className="text-xs text-muted-foreground">
+            Copy these into your Railway service's environment variables.
+          </p>
+        </div>
+        <CopyField label="USER_ID" value={user?.id ?? ""} />
+        <CopyField label="DASHBOARD_URL" value={DASHBOARD_URL} />
+        <CopyField label="BOT_SHARED_SECRET" value="(set the same value you configured in Lovable secrets)" />
+        <CopyField label="PHONE_NUMBER" value="(your WhatsApp number in international format, e.g. 2348012345678)" />
+        <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+          Railway service: <a href={RAILWAY_URL} target="_blank" rel="noreferrer" className="underline">{RAILWAY_URL}</a>
+        </div>
+      </Card>
     </div>
   );
 }
