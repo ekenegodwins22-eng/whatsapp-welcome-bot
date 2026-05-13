@@ -12,6 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardMessagesRouteImport } from './routes/dashboard.messages'
+import { Route as DashboardContactsRouteImport } from './routes/dashboard.contacts'
 import { Route as ApiPublicBotStatusRouteImport } from './routes/api/public/bot/status'
 import { Route as ApiPublicBotSessionRouteImport } from './routes/api/public/bot/session'
 import { Route as ApiPublicBotIncomingRouteImport } from './routes/api/public/bot/incoming'
@@ -31,6 +35,26 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMessagesRoute = DashboardMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardContactsRoute = DashboardContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const ApiPublicBotStatusRoute = ApiPublicBotStatusRouteImport.update({
   id: '/api/public/bot/status',
   path: '/api/public/bot/status',
@@ -49,16 +73,23 @@ const ApiPublicBotIncomingRoute = ApiPublicBotIncomingRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/dashboard/contacts': typeof DashboardContactsRoute
+  '/dashboard/messages': typeof DashboardMessagesRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
   '/api/public/bot/session': typeof ApiPublicBotSessionRoute
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/dashboard/contacts': typeof DashboardContactsRoute
+  '/dashboard/messages': typeof DashboardMessagesRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
   '/api/public/bot/session': typeof ApiPublicBotSessionRoute
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
@@ -66,8 +97,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/dashboard/contacts': typeof DashboardContactsRoute
+  '/dashboard/messages': typeof DashboardMessagesRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
   '/api/public/bot/session': typeof ApiPublicBotSessionRoute
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
@@ -78,14 +113,21 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/dashboard/contacts'
+    | '/dashboard/messages'
+    | '/dashboard/settings'
+    | '/dashboard/'
     | '/api/public/bot/incoming'
     | '/api/public/bot/session'
     | '/api/public/bot/status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
     | '/login'
+    | '/dashboard/contacts'
+    | '/dashboard/messages'
+    | '/dashboard/settings'
+    | '/dashboard'
     | '/api/public/bot/incoming'
     | '/api/public/bot/session'
     | '/api/public/bot/status'
@@ -94,6 +136,10 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/dashboard/contacts'
+    | '/dashboard/messages'
+    | '/dashboard/settings'
+    | '/dashboard/'
     | '/api/public/bot/incoming'
     | '/api/public/bot/session'
     | '/api/public/bot/status'
@@ -101,7 +147,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiPublicBotIncomingRoute: typeof ApiPublicBotIncomingRoute
   ApiPublicBotSessionRoute: typeof ApiPublicBotSessionRoute
@@ -131,6 +177,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/messages': {
+      id: '/dashboard/messages'
+      path: '/messages'
+      fullPath: '/dashboard/messages'
+      preLoaderRoute: typeof DashboardMessagesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/contacts': {
+      id: '/dashboard/contacts'
+      path: '/contacts'
+      fullPath: '/dashboard/contacts'
+      preLoaderRoute: typeof DashboardContactsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/api/public/bot/status': {
       id: '/api/public/bot/status'
       path: '/api/public/bot/status'
@@ -155,9 +229,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardContactsRoute: typeof DashboardContactsRoute
+  DashboardMessagesRoute: typeof DashboardMessagesRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardContactsRoute: DashboardContactsRoute,
+  DashboardMessagesRoute: DashboardMessagesRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiPublicBotIncomingRoute: ApiPublicBotIncomingRoute,
   ApiPublicBotSessionRoute: ApiPublicBotSessionRoute,
