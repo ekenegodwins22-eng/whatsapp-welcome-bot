@@ -8,7 +8,38 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Copy } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { toast } from "sonner";
+
+const DASHBOARD_URL = "https://ai-responder-pro.lovable.app";
+
+function CopyRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <div className="flex gap-2">
+        <Input readOnly value={value} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={async () => {
+            await navigator.clipboard.writeText(value);
+            toast.success(`${label} copied`);
+          }}
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 
 export const Route = createFileRoute("/dashboard/")({
   component: StatusPage,
