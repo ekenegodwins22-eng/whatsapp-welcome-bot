@@ -18,6 +18,7 @@ import { Route as DashboardMessagesRouteImport } from './routes/dashboard.messag
 import { Route as DashboardContactsRouteImport } from './routes/dashboard.contacts'
 import { Route as ApiPublicBotStatusRouteImport } from './routes/api/public/bot/status'
 import { Route as ApiPublicBotSessionRouteImport } from './routes/api/public/bot/session'
+import { Route as ApiPublicBotPendingRouteImport } from './routes/api/public/bot/pending'
 import { Route as ApiPublicBotIncomingRouteImport } from './routes/api/public/bot/incoming'
 
 const LoginRoute = LoginRouteImport.update({
@@ -65,6 +66,11 @@ const ApiPublicBotSessionRoute = ApiPublicBotSessionRouteImport.update({
   path: '/api/public/bot/session',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBotPendingRoute = ApiPublicBotPendingRouteImport.update({
+  id: '/api/public/bot/pending',
+  path: '/api/public/bot/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBotIncomingRoute = ApiPublicBotIncomingRouteImport.update({
   id: '/api/public/bot/incoming',
   path: '/api/public/bot/incoming',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
+  '/api/public/bot/pending': typeof ApiPublicBotPendingRoute
   '/api/public/bot/session': typeof ApiPublicBotSessionRoute
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard': typeof DashboardIndexRoute
   '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
+  '/api/public/bot/pending': typeof ApiPublicBotPendingRoute
   '/api/public/bot/session': typeof ApiPublicBotSessionRoute
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/public/bot/incoming': typeof ApiPublicBotIncomingRoute
+  '/api/public/bot/pending': typeof ApiPublicBotPendingRoute
   '/api/public/bot/session': typeof ApiPublicBotSessionRoute
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
 }
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/'
     | '/api/public/bot/incoming'
+    | '/api/public/bot/pending'
     | '/api/public/bot/session'
     | '/api/public/bot/status'
   fileRoutesByTo: FileRoutesByTo
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard'
     | '/api/public/bot/incoming'
+    | '/api/public/bot/pending'
     | '/api/public/bot/session'
     | '/api/public/bot/status'
   id:
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/'
     | '/api/public/bot/incoming'
+    | '/api/public/bot/pending'
     | '/api/public/bot/session'
     | '/api/public/bot/status'
   fileRoutesById: FileRoutesById
@@ -150,6 +162,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiPublicBotIncomingRoute: typeof ApiPublicBotIncomingRoute
+  ApiPublicBotPendingRoute: typeof ApiPublicBotPendingRoute
   ApiPublicBotSessionRoute: typeof ApiPublicBotSessionRoute
   ApiPublicBotStatusRoute: typeof ApiPublicBotStatusRoute
 }
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBotSessionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bot/pending': {
+      id: '/api/public/bot/pending'
+      path: '/api/public/bot/pending'
+      fullPath: '/api/public/bot/pending'
+      preLoaderRoute: typeof ApiPublicBotPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bot/incoming': {
       id: '/api/public/bot/incoming'
       path: '/api/public/bot/incoming'
@@ -252,6 +272,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiPublicBotIncomingRoute: ApiPublicBotIncomingRoute,
+  ApiPublicBotPendingRoute: ApiPublicBotPendingRoute,
   ApiPublicBotSessionRoute: ApiPublicBotSessionRoute,
   ApiPublicBotStatusRoute: ApiPublicBotStatusRoute,
 }

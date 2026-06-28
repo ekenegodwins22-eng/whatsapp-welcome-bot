@@ -24,19 +24,18 @@ export const Route = createFileRoute("/api/public/bot/status")({
         };
         if (!body.user_id) return new Response("missing user_id", { status: 400 });
 
-        const patch: Record<string, unknown> = {
-          user_id: body.user_id,
-          status: body.status ?? "unknown",
-          last_seen_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        if (body.pairing_code !== undefined) patch.pairing_code = body.pairing_code;
-        if (body.phone_number !== undefined) patch.phone_number = body.phone_number;
-        if (body.last_error !== undefined) patch.last_error = body.last_error;
-
-        const { error } = await supabaseAdmin
-          .from("bot_session")
-          .upsert(patch, { onConflict: "user_id" });
+        const { error } = await supabaseAdmin.from("bot_session").upsert(
+          {
+            user_id: body.user_id,
+            status: body.status ?? "unknown",
+            last_seen_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            ...(body.pairing_code !== undefined ? { pairing_code: body.pairing_code } : {}),
+            ...(body.phone_number !== undefined ? { phone_number: body.phone_number } : {}),
+            ...(body.last_error !== undefined ? { last_error: body.last_error } : {}),
+          },
+          { onConflict: "user_id" },
+        );
         if (error) return new Response(error.message, { status: 500 });
         return Response.json({ ok: true });
       },
