@@ -56,6 +56,7 @@ export type Database = {
       bot_session: {
         Row: {
           auth_state: Json | null
+          last_error: string | null
           last_seen_at: string | null
           pairing_code: string | null
           phone_number: string | null
@@ -65,6 +66,7 @@ export type Database = {
         }
         Insert: {
           auth_state?: Json | null
+          last_error?: string | null
           last_seen_at?: string | null
           pairing_code?: string | null
           phone_number?: string | null
@@ -74,6 +76,7 @@ export type Database = {
         }
         Update: {
           auth_state?: Json | null
+          last_error?: string | null
           last_seen_at?: string | null
           pairing_code?: string | null
           phone_number?: string | null

@@ -12,7 +12,7 @@ function checkAuth(request: Request) {
 export const Route = createFileRoute("/api/public/bot/status")({
   server: {
     handlers: {
-      // POST { user_id, status, pairing_code?, phone_number? }
+      // POST { user_id, status, pairing_code?, phone_number?, last_error? }
       POST: async ({ request }) => {
         if (!checkAuth(request)) return unauthorized();
         const body = (await request.json()) as {
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/api/public/bot/status")({
           status?: string;
           pairing_code?: string | null;
           phone_number?: string | null;
+          last_error?: string | null;
         };
         if (!body.user_id) return new Response("missing user_id", { status: 400 });
 
@@ -27,10 +28,11 @@ export const Route = createFileRoute("/api/public/bot/status")({
           {
             user_id: body.user_id,
             status: body.status ?? "unknown",
-            pairing_code: body.pairing_code ?? null,
-            phone_number: body.phone_number ?? null,
             last_seen_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+            ...(body.pairing_code !== undefined ? { pairing_code: body.pairing_code } : {}),
+            ...(body.phone_number !== undefined ? { phone_number: body.phone_number } : {}),
+            ...(body.last_error !== undefined ? { last_error: body.last_error } : {}),
           },
           { onConflict: "user_id" },
         );
