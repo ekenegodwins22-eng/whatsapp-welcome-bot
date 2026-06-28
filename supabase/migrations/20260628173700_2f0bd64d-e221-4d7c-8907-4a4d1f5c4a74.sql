@@ -1,0 +1,1 @@
+ALTER TABLE public.bot_session ADD COLUMN IF NOT EXISTS last_error TEXT;
