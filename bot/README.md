@@ -1,38 +1,46 @@
-# AwayBot — Railway WhatsApp worker
+# AwayBot — Railway WhatsApp worker (multi-tenant)
 
-Node worker that connects to WhatsApp via Baileys and talks to your Lovable dashboard. Deploy to Railway (always-on Node host) — Lovable's Worker runtime cannot keep a WhatsApp socket alive.
+Single Railway deployment that serves every user of the dashboard. No per-user
+configuration: when a user clicks **Connect WhatsApp** on the dashboard, the
+worker picks it up automatically and starts a Baileys session for them.
 
 ## Environment variables
 
-| Name | Example | Notes |
-|------|---------|-------|
-| `DASHBOARD_URL` | `https://ai-responder-pro.lovable.app` | Your published dashboard URL |
-| `BOT_SHARED_SECRET` | (random string) | Must match the secret stored in Lovable |
-| `USER_ID` | `8c2…` UUID | Your auth user id (shown on the dashboard) |
+| Name | Required | Notes |
+|------|----------|-------|
+| `DASHBOARD_URL` | yes | e.g. `https://whatsapp-welcome-bot.vercel.app` (with or without `/dashboard`) |
+| `BOT_SHARED_SECRET` | yes | Must match the secret stored in the dashboard |
+| `AUTH_ROOT` | no | Default `./auth`. Mount a Railway volume here to persist sessions |
+| `POLL_MS` | no | Reconcile interval, default `5000` |
 
-`PHONE_NUMBER` is no longer required — you enter your phone on the dashboard and the worker picks it up automatically.
+`USER_ID` and `PHONE_NUMBER` are NOT needed anymore. Share the same Railway
+worker with as many friends as you want — each dashboard account becomes its
+own session.
 
 ## Deploy
 
 ```bash
 cd bot
 npm install
-DASHBOARD_URL=… BOT_SHARED_SECRET=… USER_ID=… npm start
+DASHBOARD_URL=https://whatsapp-welcome-bot.vercel.app \
+BOT_SHARED_SECRET=… \
+npm start
 ```
 
-On Railway: set the three env vars and (optionally) mount a volume at `/app/auth` with `AUTH_DIR=/app/auth` so the session survives restarts.
+On Railway: set the two required env vars and (optionally) mount a volume at
+`/app/auth` with `AUTH_ROOT=/app/auth` so sessions survive restarts.
 
-## Linking your number
+## How it works
 
-1. Open the dashboard, type your WhatsApp number with country code (no `+`), press **Get pairing code**.
-2. Within a few seconds an 8-character code appears.
-3. On your phone: **WhatsApp → Settings → Linked Devices → Link a Device → Link with phone number instead**, enter the code.
-4. Status flips to **Connected**.
+The worker polls `/api/public/bot/pending` every few seconds:
 
-## How it decides to reply
+- Any user with `status='pair_requested'` and a phone → the worker requests a
+  pairing code, posts it back, and the dashboard displays it.
+- Any user with stored `auth_state` → the worker (re)connects automatically on
+  start or after a crash.
+- Any user with `status='logout_requested'` → the worker logs them out and
+  wipes their credentials.
 
-The dashboard server decides; the bot just forwards messages:
-
-1. New contact → send your **welcome message** (once).
-2. Otherwise, if **Away mode** is on **or** time is outside business hours → AI reply via your Ollama endpoint (`qwen2.5:0.5b`).
-3. Otherwise → stay silent.
+Inbound DMs are forwarded to `/api/public/bot/incoming`, which decides whether
+to send a welcome message, an Ollama AI reply, or stay silent based on the
+user's settings.
