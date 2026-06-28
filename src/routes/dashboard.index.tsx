@@ -259,6 +259,26 @@ function StatusPage() {
           />
         </div>
       </Card>
+
+      <Collapsible>
+        <Card className="p-6">
+          <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+            <div>
+              <h2 className="font-semibold">Worker setup (Railway)</h2>
+              <p className="text-xs text-muted-foreground">
+                Environment variables for your bot worker. Click to expand.
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground">Show</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4 space-y-3">
+            <CopyRow label="USER_ID" value={user?.id ?? ""} />
+            <CopyRow label="DASHBOARD_URL" value={DASHBOARD_URL} />
+            <CopyRow label="BOT_SHARED_SECRET" value="(use the same value stored in Lovable secrets)" />
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
     </div>
   );
 }
