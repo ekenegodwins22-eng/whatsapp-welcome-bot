@@ -6,7 +6,7 @@ import {
   fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
 import pino from "pino";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
@@ -14,14 +14,11 @@ const {
   DASHBOARD_URL,
   BOT_SHARED_SECRET,
   USER_ID,
-  PHONE_NUMBER,
   AUTH_DIR = "./auth",
 } = process.env;
 
-if (!DASHBOARD_URL || !BOT_SHARED_SECRET || !USER_ID || !PHONE_NUMBER) {
-  console.error(
-    "Missing env: DASHBOARD_URL, BOT_SHARED_SECRET, USER_ID, PHONE_NUMBER are required.",
-  );
+if (!DASHBOARD_URL || !BOT_SHARED_SECRET || !USER_ID) {
+  console.error("Missing env: DASHBOARD_URL, BOT_SHARED_SECRET, USER_ID required.");
   process.exit(1);
 }
 
@@ -35,39 +32,38 @@ async function reportStatus(status, extra = {}) {
     await fetch(`${DASHBOARD_URL}/api/public/bot/status`, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        user_id: USER_ID,
-        status,
-        phone_number: PHONE_NUMBER,
-        ...extra,
-      }),
+      body: JSON.stringify({ user_id: USER_ID, status, ...extra }),
     });
   } catch (e) {
     console.error("status report failed", e.message);
   }
 }
 
-// --- Auth state persistence: load from server on boot, push on every update.
-async function downloadAuthState() {
-  if (!existsSync(AUTH_DIR)) await mkdir(AUTH_DIR, { recursive: true });
+async function fetchSession() {
   try {
     const r = await fetch(
       `${DASHBOARD_URL}/api/public/bot/session?user_id=${USER_ID}`,
       { headers },
     );
-    if (!r.ok) return;
-    const json = await r.json();
-    if (!json.auth_state) return;
-    for (const [name, content] of Object.entries(json.auth_state)) {
-      await writeFile(path.join(AUTH_DIR, name), content, "utf8");
-    }
-    console.log("Restored auth state from server");
+    if (!r.ok) return null;
+    return await r.json();
   } catch (e) {
-    console.error("downloadAuthState failed", e.message);
+    console.error("fetchSession failed", e.message);
+    return null;
   }
 }
 
-async function uploadAuthState() {
+async function downloadAuthState() {
+  if (!existsSync(AUTH_DIR)) await mkdir(AUTH_DIR, { recursive: true });
+  const json = await fetchSession();
+  if (!json?.auth_state) return;
+  for (const [name, content] of Object.entries(json.auth_state)) {
+    await writeFile(path.join(AUTH_DIR, name), content, "utf8");
+  }
+  console.log("Restored auth state from server");
+}
+
+async function uploadAuthState(phoneNumber) {
   try {
     if (!existsSync(AUTH_DIR)) return;
     const files = await readdir(AUTH_DIR);
@@ -81,11 +77,24 @@ async function uploadAuthState() {
       body: JSON.stringify({
         user_id: USER_ID,
         auth_state: blob,
-        phone_number: PHONE_NUMBER,
+        phone_number: phoneNumber ?? null,
       }),
     });
   } catch (e) {
     console.error("uploadAuthState failed", e.message);
+  }
+}
+
+async function waitForPairRequest() {
+  // Poll until the dashboard records status='pair_requested' with a phone.
+  console.log("Waiting for pairing request from dashboard...");
+  await reportStatus("waiting_for_phone");
+  while (true) {
+    const s = await fetchSession();
+    if (s?.status === "pair_requested" && s?.phone_number) {
+      return s.phone_number.replace(/\D/g, "");
+    }
+    await new Promise((r) => setTimeout(r, 4000));
   }
 }
 
@@ -102,29 +111,36 @@ async function start() {
     browser: Browsers.appropriate("Chrome"),
   });
 
-  // Pairing code login if not registered yet
+  let pairingPhone = null;
+
   if (!sock.authState.creds.registered) {
+    pairingPhone = await waitForPairRequest();
     setTimeout(async () => {
       try {
-        const code = await sock.requestPairingCode(PHONE_NUMBER.replace(/\D/g, ""));
+        const code = await sock.requestPairingCode(pairingPhone);
         const formatted = code?.match(/.{1,4}/g)?.join("-") ?? code;
         console.log("\n=== WhatsApp pairing code:", formatted, "===\n");
-        await reportStatus("pairing", { pairing_code: formatted });
+        await reportStatus("pairing", {
+          pairing_code: formatted,
+          phone_number: pairingPhone,
+        });
       } catch (e) {
         console.error("requestPairingCode failed", e);
+        await reportStatus("disconnected", { pairing_code: null });
       }
     }, 2500);
   }
 
   sock.ev.on("creds.update", async () => {
     await saveCreds();
-    await uploadAuthState();
+    await uploadAuthState(pairingPhone);
   });
 
   sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
     console.log("connection:", connection);
     if (connection === "open") {
-      await reportStatus("connected", { pairing_code: null });
+      const me = sock.user?.id?.split(":")[0]?.split("@")[0] ?? pairingPhone;
+      await reportStatus("connected", { pairing_code: null, phone_number: me });
     } else if (connection === "close") {
       const code = lastDisconnect?.error?.output?.statusCode;
       await reportStatus("disconnected");
@@ -132,7 +148,10 @@ async function start() {
         console.log("reconnecting in 3s…");
         setTimeout(start, 3000);
       } else {
-        console.log("Logged out. Delete auth dir and restart to re-pair.");
+        console.log("Logged out. Clearing auth and restarting.");
+        await rm(AUTH_DIR, { recursive: true, force: true });
+        await uploadAuthState(null);
+        setTimeout(start, 2000);
       }
     }
   });
