@@ -1,64 +1,38 @@
 # AwayBot — Railway WhatsApp worker
 
-This folder is the Node.js bot that connects to WhatsApp via Baileys (unofficial)
-and talks to your Lovable dashboard. **Do not deploy it to Lovable** — Lovable
-runs on Cloudflare Workers, which can't keep a WhatsApp socket alive. Deploy it
-to Railway (or any always-on Node host).
-
-## Requirements
-
-- A secondary WhatsApp number (Baileys is unofficial; never use your main number)
-- Node 20+
-- A Railway account
+Node worker that connects to WhatsApp via Baileys and talks to your Lovable dashboard. Deploy to Railway (always-on Node host) — Lovable's Worker runtime cannot keep a WhatsApp socket alive.
 
 ## Environment variables
 
 | Name | Example | Notes |
 |------|---------|-------|
-| `DASHBOARD_URL` | `https://project--7199a11b-ad63-44d7-bc3a-3902774b3fb2.lovable.app` | Your Lovable app's stable URL |
-| `BOT_SHARED_SECRET` | (random string) | Must match the secret you set in Lovable |
-| `USER_ID` | `8c2…` UUID | Your Supabase auth user id (see below) |
-| `PHONE_NUMBER` | `2348012345678` | Your WhatsApp number, country code, no `+` |
+| `DASHBOARD_URL` | `https://ai-responder-pro.lovable.app` | Your published dashboard URL |
+| `BOT_SHARED_SECRET` | (random string) | Must match the secret stored in Lovable |
+| `USER_ID` | `8c2…` UUID | Your auth user id (shown on the dashboard) |
 
-### Finding your USER_ID
+`PHONE_NUMBER` is no longer required — you enter your phone on the dashboard and the worker picks it up automatically.
 
-1. Sign in to the dashboard.
-2. Open browser devtools → Application → Local Storage → look for a key like
-   `sb-…-auth-token`. Copy the `user.id` value (UUID).
-
-## Deploy to Railway
+## Deploy
 
 ```bash
-# Local quick test first
 cd bot
 npm install
-DASHBOARD_URL=… BOT_SHARED_SECRET=… USER_ID=… PHONE_NUMBER=… npm start
+DASHBOARD_URL=… BOT_SHARED_SECRET=… USER_ID=… npm start
 ```
 
-Then on Railway:
-
-1. New Project → Deploy from GitHub repo (or `railway up` from this folder).
-2. Set the four env vars above in the Railway service.
-3. Add a persistent volume mounted at `/app/auth` so the WhatsApp session
-   survives restarts. Set `AUTH_DIR=/app/auth` if you do.
-4. Deploy. Watch the logs.
+On Railway: set the three env vars and (optionally) mount a volume at `/app/auth` with `AUTH_DIR=/app/auth` so the session survives restarts.
 
 ## Linking your number
 
-On first boot the bot prints an 8-character pairing code (also shown on the
-dashboard's Status page). On your phone:
-
-> WhatsApp → **Settings → Linked Devices → Link a Device → Link with phone number instead**
-
-Enter the code. The dashboard will switch to **Connected** within a few seconds.
-The encrypted session is uploaded to your Lovable backend, so re-deploys keep
-the link.
+1. Open the dashboard, type your WhatsApp number with country code (no `+`), press **Get pairing code**.
+2. Within a few seconds an 8-character code appears.
+3. On your phone: **WhatsApp → Settings → Linked Devices → Link a Device → Link with phone number instead**, enter the code.
+4. Status flips to **Connected**.
 
 ## How it decides to reply
 
-The dashboard server makes the decision (the bot just forwards messages):
+The dashboard server decides; the bot just forwards messages:
 
 1. New contact → send your **welcome message** (once).
-2. Otherwise, if **Away mode** is on **or** the time is outside business
-   hours → send an **AI reply** (Lovable AI).
-3. Otherwise → stay silent (you're "online").
+2. Otherwise, if **Away mode** is on **or** time is outside business hours → AI reply via your Ollama endpoint (`qwen2.5:0.5b`).
+3. Otherwise → stay silent.

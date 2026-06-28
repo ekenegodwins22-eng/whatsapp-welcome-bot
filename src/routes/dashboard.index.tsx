@@ -8,37 +8,38 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Copy, Check } from "lucide-react";
+import { Copy } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { toast } from "sonner";
 
 const DASHBOARD_URL = "https://ai-responder-pro.lovable.app";
-const RAILWAY_URL = "https://whatsapp-welcome-bot-production.up.railway.app/";
 
-function CopyField({ label, value, mask }: { label: string; value: string; mask?: boolean }) {
-  const [copied, setCopied] = useState(false);
-  const display = mask ? "•".repeat(Math.min(value.length, 24)) : value;
+function CopyRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <div className="flex gap-2">
-        <Input readOnly value={display} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
+        <Input readOnly value={value} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
         <Button
           type="button"
           variant="outline"
           size="icon"
           onClick={async () => {
             await navigator.clipboard.writeText(value);
-            setCopied(true);
             toast.success(`${label} copied`);
-            setTimeout(() => setCopied(false), 1500);
           }}
         >
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          <Copy className="h-4 w-4" />
         </Button>
       </div>
     </div>
   );
 }
+
 
 export const Route = createFileRoute("/dashboard/")({
   component: StatusPage,
@@ -56,6 +57,8 @@ function StatusPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [enabled, setEnabled] = useState(true);
   const [away, setAway] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -79,12 +82,11 @@ function StatusPage() {
         setEnabled(c.data.enabled);
         setAway(c.data.away_mode);
       } else {
-        // create default row
         await supabase.from("bot_config").insert({ user_id: user.id });
       }
     };
     load();
-    const id = setInterval(load, 5000);
+    const id = setInterval(load, 4000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -101,21 +103,57 @@ function StatusPage() {
     else toast.success("Saved");
   }
 
+  async function requestPairing() {
+    if (!user) return;
+    const phone = phoneInput.replace(/\D/g, "");
+    if (phone.length < 8) {
+      toast.error("Enter your full WhatsApp number with country code");
+      return;
+    }
+    setConnecting(true);
+    const { error } = await supabase.from("bot_session").upsert(
+      {
+        user_id: user.id,
+        phone_number: phone,
+        status: "pair_requested",
+        pairing_code: null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
+    setConnecting(false);
+    if (error) toast.error(error.message);
+    else toast.success("Requested. Pairing code will appear shortly.");
+  }
+
+  async function disconnect() {
+    if (!user) return;
+    if (!confirm("Disconnect WhatsApp? You'll need to pair again.")) return;
+    await supabase
+      .from("bot_session")
+      .update({ status: "logout_requested", pairing_code: null, auth_state: null })
+      .eq("user_id", user.id);
+    toast.success("Disconnect requested");
+  }
+
   const status = session?.status ?? "disconnected";
   const statusVariant: Record<string, string> = {
     connected: "bg-green-500/15 text-green-700 dark:text-green-300",
-    connecting: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
     pairing: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    pair_requested: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+    waiting_for_phone: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
     disconnected: "bg-red-500/15 text-red-700 dark:text-red-300",
     unknown: "bg-muted text-muted-foreground",
   };
+
+  const isConnected = status === "connected";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Status</h1>
         <p className="text-muted-foreground">
-          Connect your WhatsApp number and control when the bot replies.
+          Link your WhatsApp number and control when the bot replies.
         </p>
       </div>
 
@@ -123,36 +161,67 @@ function StatusPage() {
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm text-muted-foreground">Connection</div>
-            <div className="mt-1 text-2xl font-semibold capitalize">{status}</div>
+            <div className="mt-1 text-2xl font-semibold capitalize">
+              {status.replace(/_/g, " ")}
+            </div>
             {session?.phone_number && (
               <div className="mt-1 text-sm text-muted-foreground">
-                {session.phone_number}
+                +{session.phone_number}
               </div>
             )}
           </div>
           <Badge className={statusVariant[status] ?? statusVariant.unknown}>
-            {status}
+            {status.replace(/_/g, " ")}
           </Badge>
         </div>
 
-        {session?.pairing_code && status !== "connected" && (
-          <div className="mt-6 rounded-lg border border-dashed bg-muted/30 p-4">
-            <div className="text-sm font-medium">Pairing code</div>
-            <div className="mt-2 font-mono text-3xl tracking-widest">
-              {session.pairing_code}
+        {!isConnected && (
+          <div className="mt-6 space-y-3 rounded-lg border bg-muted/20 p-4">
+            <div>
+              <Label htmlFor="phone" className="text-sm font-medium">
+                Your WhatsApp number
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Include country code, no <code>+</code> or spaces. e.g. <code>2348012345678</code>
+              </p>
             </div>
-            <p className="mt-3 text-sm text-muted-foreground">
-              In WhatsApp on your phone: <strong>Settings → Linked Devices →
-              Link a Device → Link with phone number instead</strong>, then enter
-              this code. It expires in ~60 seconds.
-            </p>
+            <div className="flex gap-2">
+              <Input
+                id="phone"
+                inputMode="numeric"
+                placeholder="2348012345678"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+              />
+              <Button onClick={requestPairing} disabled={connecting}>
+                {connecting ? "Requesting..." : "Get pairing code"}
+              </Button>
+            </div>
+
+            {session?.pairing_code && (
+              <div className="rounded-md border border-dashed bg-background p-4">
+                <div className="text-sm font-medium">Pairing code</div>
+                <div className="mt-2 font-mono text-3xl tracking-widest">
+                  {session.pairing_code}
+                </div>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  On your phone open WhatsApp →{" "}
+                  <strong>
+                    Settings → Linked Devices → Link a Device → Link with phone
+                    number instead
+                  </strong>{" "}
+                  and enter this code. Expires in ~60 seconds.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
-        {!session && (
-          <div className="mt-6 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            No bot connected yet. Deploy the bot to Railway (see README in the{" "}
-            <code>bot/</code> folder) and it will appear here.
+        {isConnected && (
+          <div className="mt-6 flex justify-end">
+            <Button variant="outline" onClick={disconnect}>
+              Disconnect
+            </Button>
           </div>
         )}
       </Card>
@@ -191,21 +260,25 @@ function StatusPage() {
         </div>
       </Card>
 
-      <Card className="space-y-4 p-6">
-        <div>
-          <h2 className="font-semibold">Bot deployment</h2>
-          <p className="text-xs text-muted-foreground">
-            Copy these into your Railway service's environment variables.
-          </p>
-        </div>
-        <CopyField label="USER_ID" value={user?.id ?? ""} />
-        <CopyField label="DASHBOARD_URL" value={DASHBOARD_URL} />
-        <CopyField label="BOT_SHARED_SECRET" value="(set the same value you configured in Lovable secrets)" />
-        <CopyField label="PHONE_NUMBER" value="(your WhatsApp number in international format, e.g. 2348012345678)" />
-        <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-          Railway service: <a href={RAILWAY_URL} target="_blank" rel="noreferrer" className="underline">{RAILWAY_URL}</a>
-        </div>
-      </Card>
+      <Collapsible>
+        <Card className="p-6">
+          <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+            <div>
+              <h2 className="font-semibold">Worker setup (Railway)</h2>
+              <p className="text-xs text-muted-foreground">
+                Environment variables for your bot worker. Click to expand.
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground">Show</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4 space-y-3">
+            <CopyRow label="USER_ID" value={user?.id ?? ""} />
+            <CopyRow label="DASHBOARD_URL" value={DASHBOARD_URL} />
+            <CopyRow label="BOT_SHARED_SECRET" value="(use the same value stored in Lovable secrets)" />
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
     </div>
   );
 }

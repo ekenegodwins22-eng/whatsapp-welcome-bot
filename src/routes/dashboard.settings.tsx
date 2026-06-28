@@ -20,13 +20,8 @@ export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsPage,
 });
 
-const MODELS = [
-  "google/gemini-2.5-flash",
-  "google/gemini-2.5-flash-lite",
-  "google/gemini-2.5-pro",
-  "openai/gpt-5-mini",
-  "openai/gpt-5-nano",
-];
+
+
 
 const TIMEZONES = [
   "UTC",
@@ -59,7 +54,6 @@ function SettingsPage() {
     timezone: "UTC",
     business_hours_start: 9,
     business_hours_end: 17,
-    ai_model: "google/gemini-2.5-flash",
   });
 
   useEffect(() => {
@@ -77,12 +71,12 @@ function SettingsPage() {
           timezone: data.timezone,
           business_hours_start: data.business_hours_start,
           business_hours_end: data.business_hours_end,
-          ai_model: data.ai_model,
         });
       }
       setLoading(false);
     })();
   }, [user]);
+
 
   async function save() {
     if (!user) return;
@@ -136,44 +130,25 @@ function SettingsPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>AI model</Label>
-            <Select
-              value={form.ai_model}
-              onValueChange={(v) => setForm({ ...form, ai_model: v })}
-            >
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MODELS.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Timezone</Label>
-            <Select
-              value={form.timezone}
-              onValueChange={(v) => setForm({ ...form, timezone: v })}
-            >
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TIMEZONES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div>
+          <Label>Timezone</Label>
+          <Select
+            value={form.timezone}
+            onValueChange={(v) => setForm({ ...form, timezone: v })}
+          >
+            <SelectTrigger className="mt-2">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TIMEZONES.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
 
         <div className="grid grid-cols-2 gap-4">
           <div>

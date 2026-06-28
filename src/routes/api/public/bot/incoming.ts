@@ -25,7 +25,6 @@ function isOutsideBusinessHours(
     if (startHour <= endHour) {
       return hour < startHour || hour >= endHour;
     }
-    // wraps midnight (e.g. 22 → 6)
     return hour < startHour && hour >= endHour;
   } catch {
     return false;
@@ -33,17 +32,18 @@ function isOutsideBusinessHours(
 }
 
 async function callAi(
-  model: string,
   systemPrompt: string,
   userMessage: string,
 ): Promise<string | null> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) return null;
+  const baseUrl = process.env.OLLAMA_URL;
+  const apiKey = process.env.OLLAMA_API_KEY;
+  const model = process.env.OLLAMA_MODEL || "qwen2.5:0.5b";
+  if (!baseUrl) return null;
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch(`${baseUrl.replace(/\/$/, "")}/v1/chat/completions`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -52,10 +52,11 @@ async function callAi(
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
         ],
+        stream: false,
       }),
     });
     if (!res.ok) {
-      console.error("AI gateway error", res.status, await res.text());
+      console.error("Ollama error", res.status, await res.text());
       return null;
     }
     const data = (await res.json()) as {
@@ -71,7 +72,6 @@ async function callAi(
 export const Route = createFileRoute("/api/public/bot/incoming")({
   server: {
     handlers: {
-      // POST { user_id, phone, body, display_name? }
       POST: async ({ request }) => {
         if (!checkAuth(request)) return unauthorized();
         const body = (await request.json()) as {
@@ -84,7 +84,6 @@ export const Route = createFileRoute("/api/public/bot/incoming")({
           return new Response("missing fields", { status: 400 });
         }
 
-        // Log incoming message
         await supabaseAdmin.from("messages").insert({
           user_id: body.user_id,
           phone: body.phone,
@@ -92,7 +91,6 @@ export const Route = createFileRoute("/api/public/bot/incoming")({
           body: body.body,
         });
 
-        // Load config
         const { data: config } = await supabaseAdmin
           .from("bot_config")
           .select("*")
@@ -103,7 +101,6 @@ export const Route = createFileRoute("/api/public/bot/incoming")({
           return Response.json({ reply: null, reason: "disabled" });
         }
 
-        // Upsert contact
         const { data: existing } = await supabaseAdmin
           .from("contacts")
           .select("id, welcomed_at")
@@ -121,7 +118,6 @@ export const Route = createFileRoute("/api/public/bot/incoming")({
           });
         }
 
-        // 1. Welcome new contacts
         if (isNewContact || !existing?.welcomed_at) {
           await supabaseAdmin
             .from("contacts")
@@ -140,7 +136,6 @@ export const Route = createFileRoute("/api/public/bot/incoming")({
           return Response.json({ reply: config.welcome_message, reason: "welcome" });
         }
 
-        // 2. AI reply if away or outside business hours
         const offHours = isOutsideBusinessHours(
           config.timezone,
           config.business_hours_start,
@@ -151,11 +146,7 @@ export const Route = createFileRoute("/api/public/bot/incoming")({
           return Response.json({ reply: null, reason: "online" });
         }
 
-        const aiReply = await callAi(
-          config.ai_model,
-          config.system_prompt,
-          body.body,
-        );
+        const aiReply = await callAi(config.system_prompt, body.body);
         if (!aiReply) {
           return Response.json({ reply: null, reason: "ai_failed" });
         }
