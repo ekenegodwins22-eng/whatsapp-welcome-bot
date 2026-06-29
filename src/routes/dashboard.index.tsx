@@ -223,6 +223,14 @@ function StatusPage() {
             </div>
           </div>
         )}
+
+        {session?.phone_number && !isConnected && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={regenerateCode} disabled={working}>
+              <RefreshCw className="mr-2 h-4 w-4" /> Refresh pairing code
+            </Button>
+          </div>
+        )}
       </Card>
 
       {!isConnected && (
