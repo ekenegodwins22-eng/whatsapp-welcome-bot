@@ -40,6 +40,7 @@ function StatusPage() {
   const [away, setAway] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
   const [working, setWorking] = useState(false);
+  const [pairRequestedAt, setPairRequestedAt] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -75,6 +76,28 @@ function StatusPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Auto-retry: if we've been waiting for a pairing code for >30s with no code
+  // arriving from the worker, re-trigger the pair request automatically.
+  useEffect(() => {
+    if (!user || !session) return;
+    const waiting =
+      session.status === "pair_requested" && !session.pairing_code && session.phone_number;
+    if (!waiting) {
+      setPairRequestedAt(null);
+      return;
+    }
+    if (pairRequestedAt === null) {
+      setPairRequestedAt(Date.now());
+      return;
+    }
+    if (Date.now() - pairRequestedAt > 30_000) {
+      setPairRequestedAt(Date.now());
+      void startPairing(session.phone_number!);
+      toast.info("Worker is slow — retrying pairing request…");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, user, pairRequestedAt]);
 
   async function updateConfig(patch: { enabled?: boolean; away_mode?: boolean }) {
     if (!user) return;
@@ -198,6 +221,14 @@ function StatusPage() {
                 {session.last_error}
               </div>
             </div>
+          </div>
+        )}
+
+        {session?.phone_number && !isConnected && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={regenerateCode} disabled={working}>
+              <RefreshCw className="mr-2 h-4 w-4" /> Refresh pairing code
+            </Button>
           </div>
         )}
       </Card>
