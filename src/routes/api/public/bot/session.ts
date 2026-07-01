@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function unauthorized() {
   return new Response(JSON.stringify({ error: "unauthorized" }), {
@@ -19,6 +18,7 @@ export const Route = createFileRoute("/api/public/bot/session")({
       // GET ?user_id=...  → return saved auth_state
       GET: async ({ request }) => {
         if (!checkAuth(request)) return unauthorized();
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const url = new URL(request.url);
         const userId = url.searchParams.get("user_id");
         if (!userId) return new Response("missing user_id", { status: 400 });
@@ -36,6 +36,7 @@ export const Route = createFileRoute("/api/public/bot/session")({
       // POST { user_id, auth_state } → upsert auth_state
       POST: async ({ request }) => {
         if (!checkAuth(request)) return unauthorized();
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const body = (await request.json()) as {
           user_id?: string;
           auth_state?: unknown;
