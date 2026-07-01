@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function unauthorized() {
   return new Response("unauthorized", { status: 401 });
@@ -17,6 +16,7 @@ export const Route = createFileRoute("/api/public/bot/pending")({
     handlers: {
       GET: async ({ request }) => {
         if (!checkAuth(request)) return unauthorized();
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         const { data, error } = await supabaseAdmin
           .from("bot_session")
