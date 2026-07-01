@@ -8,7 +8,7 @@ worker picks it up automatically and starts a Baileys session for them.
 
 | Name | Required | Notes |
 |------|----------|-------|
-| `DASHBOARD_URL` | yes | e.g. `https://whatsapp-welcome-bot.vercel.app` (with or without `/dashboard`) |
+| `DASHBOARD_URL` | yes | Your deployed dashboard origin, with or without `/dashboard` |
 | `BOT_SHARED_SECRET` | yes | Must match the secret stored in the dashboard |
 | `AUTH_ROOT` | no | Default `./auth`. Mount a Railway volume here to persist sessions |
 | `POLL_MS` | no | Reconcile interval, default `5000` |
@@ -22,7 +22,7 @@ own session.
 ```bash
 cd bot
 npm install
-DASHBOARD_URL=https://whatsapp-welcome-bot.vercel.app \
+DASHBOARD_URL=https://your-dashboard-domain.com \
 BOT_SHARED_SECRET=… \
 npm start
 ```
