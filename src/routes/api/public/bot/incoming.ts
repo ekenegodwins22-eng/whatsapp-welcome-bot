@@ -32,25 +32,26 @@ function isOutsideBusinessHours(
 
 type ChatMsg = { role: "system" | "user" | "assistant"; content: string };
 
-async function callAi(messages: ChatMsg[]): Promise<string | null> {
-  const baseUrl =
-    process.env.OLLAMA_URL ||
-    "https://ollama-fastapi-railway-deployment-qst2ba.fly.dev";
-  const apiKey =
-    process.env.OLLAMA_API_KEY ||
-    "ollama_thfd2mMOx7E8Y14i_fBUMxej5JolfIXf1WIDQL8cD7g";
-  const model = process.env.OLLAMA_MODEL || "qwen2.5:0.5b";
+async function callAi(
+  messages: ChatMsg[],
+  model: string,
+): Promise<string | null> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) {
+    console.error("LOVABLE_API_KEY missing");
+    return null;
+  }
   try {
-    const res = await fetch(`${baseUrl.replace(/\/$/, "")}/v1/chat/completions`, {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ model, messages, stream: false }),
     });
     if (!res.ok) {
-      console.error("Ollama error", res.status, await res.text());
+      console.error("AI gateway error", res.status, await res.text());
       return null;
     }
     const data = (await res.json()) as {
