@@ -30,14 +30,16 @@ function isOutsideBusinessHours(
   }
 }
 
-async function callAi(
-  systemPrompt: string,
-  userMessage: string,
-): Promise<string | null> {
-  const baseUrl = process.env.OLLAMA_URL;
-  const apiKey = process.env.OLLAMA_API_KEY;
+type ChatMsg = { role: "system" | "user" | "assistant"; content: string };
+
+async function callAi(messages: ChatMsg[]): Promise<string | null> {
+  const baseUrl =
+    process.env.OLLAMA_URL ||
+    "https://ollama-fastapi-railway-deployment-qst2ba.fly.dev";
+  const apiKey =
+    process.env.OLLAMA_API_KEY ||
+    "ollama_thfd2mMOx7E8Y14i_fBUMxej5JolfIXf1WIDQL8cD7g";
   const model = process.env.OLLAMA_MODEL || "qwen2.5:0.5b";
-  if (!baseUrl) return null;
   try {
     const res = await fetch(`${baseUrl.replace(/\/$/, "")}/v1/chat/completions`, {
       method: "POST",
@@ -45,14 +47,7 @@ async function callAi(
         ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-        ],
-        stream: false,
-      }),
+      body: JSON.stringify({ model, messages, stream: false }),
     });
     if (!res.ok) {
       console.error("Ollama error", res.status, await res.text());
