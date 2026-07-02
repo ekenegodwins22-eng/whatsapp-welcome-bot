@@ -174,7 +174,7 @@ You are replying inside a WhatsApp chat as a helpful, human-like assistant (thin
             ...historyMsgs,
             { role: "user", content: body.body },
           ],
-          config.ai_model || "google/gemini-2.5-flash",
+          config.ai_model || "openai/gpt-5-mini",
         );
         if (!aiReply) {
           return Response.json({ reply: null, reason: "ai_failed" });
