@@ -32,25 +32,26 @@ function isOutsideBusinessHours(
 
 type ChatMsg = { role: "system" | "user" | "assistant"; content: string };
 
-async function callAi(messages: ChatMsg[]): Promise<string | null> {
-  const baseUrl =
-    process.env.OLLAMA_URL ||
-    "https://ollama-fastapi-railway-deployment-qst2ba.fly.dev";
-  const apiKey =
-    process.env.OLLAMA_API_KEY ||
-    "ollama_thfd2mMOx7E8Y14i_fBUMxej5JolfIXf1WIDQL8cD7g";
-  const model = process.env.OLLAMA_MODEL || "qwen2.5:0.5b";
+async function callAi(
+  messages: ChatMsg[],
+  model: string,
+): Promise<string | null> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) {
+    console.error("LOVABLE_API_KEY missing");
+    return null;
+  }
   try {
-    const res = await fetch(`${baseUrl.replace(/\/$/, "")}/v1/chat/completions`, {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ model, messages, stream: false }),
     });
     if (!res.ok) {
-      console.error("Ollama error", res.status, await res.text());
+      console.error("AI gateway error", res.status, await res.text());
       return null;
     }
     const data = (await res.json()) as {
@@ -159,13 +160,22 @@ export const Route = createFileRoute("/api/public/bot/incoming")({
 
         const systemPrompt = `${config.system_prompt}
 
-You are replying inside a WhatsApp chat as a helpful human-like assistant (think ChatGPT or Jarvis) on behalf of the account owner, who is currently away. Keep replies concise, friendly, and natural for WhatsApp. If the owner's prompt above mentions a business, product, service, prices, or a website, use that information to answer the contact's questions helpfully. If you truly don't know something specific, say you'll pass the message to the owner. Never say you are an AI language model unless asked directly.`;
+You are replying inside a WhatsApp chat as a helpful, human-like assistant (think ChatGPT or Jarvis) on behalf of the account owner, who is currently away. Style rules:
+- Keep replies short, warm, and natural for WhatsApp (1–4 sentences, no walls of text).
+- Use ONLY the information given in the owner's prompt above and the conversation history. If the owner's prompt lists a business, products, prices, or a website, use those exact details to answer.
+- NEVER invent facts, phone numbers, emails, addresses, order links, prices, product names, or policies. NEVER output bracketed placeholders like "[insert contact information]" or "[your website]".
+- If the contact asks for something you don't have info for (an item not listed, a custom order, live support, refunds, etc.), do NOT make up an answer. Politely ask them for the details they'd like to share, tell them you'll pass it to the owner, and that the owner will reply personally when back online.
+- If the owner's prompt includes a website URL, share that exact URL when relevant (e.g. for browsing products or placing orders). Do not shorten, rename, or guess a different URL.
+- Never claim to be an AI language model unless asked directly.`;
 
-        const aiReply = await callAi([
-          { role: "system", content: systemPrompt },
-          ...historyMsgs,
-          { role: "user", content: body.body },
-        ]);
+        const aiReply = await callAi(
+          [
+            { role: "system", content: systemPrompt },
+            ...historyMsgs,
+            { role: "user", content: body.body },
+          ],
+          config.ai_model || "google/gemini-2.5-flash",
+        );
         if (!aiReply) {
           return Response.json({ reply: null, reason: "ai_failed" });
         }
