@@ -141,7 +141,31 @@ export const Route = createFileRoute("/api/public/bot/incoming")({
           return Response.json({ reply: null, reason: "online" });
         }
 
-        const aiReply = await callAi(config.system_prompt, body.body);
+        // Pull recent conversation history for context (last 20 turns)
+        const { data: history } = await supabaseAdmin
+          .from("messages")
+          .select("direction, body, created_at")
+          .eq("user_id", body.user_id)
+          .eq("phone", body.phone)
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        const historyMsgs: ChatMsg[] = (history ?? [])
+          .reverse()
+          .map((m) => ({
+            role: m.direction === "in" ? "user" : "assistant",
+            content: m.body,
+          }));
+
+        const systemPrompt = `${config.system_prompt}
+
+You are replying inside a WhatsApp chat as a helpful human-like assistant (think ChatGPT or Jarvis) on behalf of the account owner, who is currently away. Keep replies concise, friendly, and natural for WhatsApp. If the owner's prompt above mentions a business, product, service, prices, or a website, use that information to answer the contact's questions helpfully. If you truly don't know something specific, say you'll pass the message to the owner. Never say you are an AI language model unless asked directly.`;
+
+        const aiReply = await callAi([
+          { role: "system", content: systemPrompt },
+          ...historyMsgs,
+          { role: "user", content: body.body },
+        ]);
         if (!aiReply) {
           return Response.json({ reply: null, reason: "ai_failed" });
         }
